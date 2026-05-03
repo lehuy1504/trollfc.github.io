@@ -86,6 +86,22 @@ footer {
   opacity: 0.6;
 }
 
+.admin-link-wrap {
+  margin-top: 18px;
+}
+
+.admin-link {
+  font-size: 0.78rem;
+  color: #555;
+  text-decoration: none;
+  letter-spacing: 0.03em;
+  transition: color 0.2s;
+}
+
+.admin-link:hover {
+  color: var(--accent);
+}
+
 /* ===== POPUP PASSWORD ===== */
 .popup {
   position: fixed;

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TrollFC | Admin</title>
+  <link rel="icon" href="/assets/img/football.png?v=2">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <!-- ===== GATE ===== -->
+  <div id="gate">
+    <div class="gate-box">
+      <div class="gate-icon">⚙️</div>
+      <h2>Admin Panel</h2>
+      <p class="gate-sub">Nhập mật khẩu để tiếp tục</p>
+      <div class="pw-wrap">
+        <input type="password" id="gateInput" placeholder="Mật khẩu admin..." autocomplete="off"/>
+        <button id="gateToggle" type="button">🙉</button>
+      </div>
+      <p id="gateError" class="err-text"></p>
+      <div class="gate-actions">
+        <button id="gateSubmit" class="btn primary">Xác nhận</button>
+        <a href="/" class="btn ghost">← Quay lại</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ADMIN PANEL ===== -->
+  <div id="adminPanel" style="display:none">
+    <header class="topbar">
+      <span>⚙️ Admin Panel</span>
+      <a href="/" class="back-btn">← Trang chủ</a>
+    </header>
+
+    <div class="container">
+
+      <div id="status" class="status info">Sẵn sàng</div>
+
+      <!-- CÀI ĐẶT KẾT NỐI -->
+      <section class="card">
+        <h3>🔧 Cài đặt kết nối Apps Script</h3>
+        <div class="setup-grid">
+          <input id="scriptUrl" type="url" placeholder="Apps Script URL — https://script.google.com/macros/s/.../exec"/>
+          <input id="scriptToken" type="text" placeholder="Secret token (tự đặt, phải khớp với Apps Script)"/>
+          <div class="setup-btns">
+            <button id="btnSaveSetup" class="btn primary">💾 Lưu cài đặt</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- THAO TÁC -->
+      <section class="card">
+        <h3>⚡ Thao tác</h3>
+        <div class="action-row">
+          <button id="btnLoad" class="btn normal">📥 Tải dữ liệu</button>
+          <button id="btnAddRow" class="btn secondary">➕ Thêm dòng</button>
+          <button id="btnClear" class="btn danger">🗑 Xóa toàn bộ</button>
+        </div>
+      </section>
+
+      <!-- QUẢN LÝ FORM -->
+      <section class="card">
+        <h3>📝 Quản lý Form khảo sát</h3>
+        <div class="action-row" style="margin-bottom:14px">
+          <button id="btnLoadForm" class="btn normal">📋 Tải danh sách cầu thủ</button>
+          <button id="btnAddPlayer" class="btn secondary">➕ Thêm cầu thủ</button>
+        </div>
+        <div id="addPlayerRow" class="add-player-row" style="display:none">
+          <input id="newPlayerInput" type="text" placeholder="Tên cầu thủ mới..."/>
+          <button id="btnConfirmPlayer" class="btn primary small">✅ Thêm</button>
+          <button id="btnCancelPlayer" class="btn ghost small">Huỷ</button>
+        </div>
+        <div id="formContainer">
+          <p class="empty-msg">Bấm "Tải danh sách cầu thủ" để xem và chỉnh sửa.</p>
+        </div>
+      </section>
+
+      <!-- DỮ LIỆU -->
+      <section class="card">
+        <h3>📋 Dữ liệu hiện tại <span id="rowCount" class="count-badge" style="display:none"></span></h3>
+        <div id="dataContainer">
+          <p class="empty-msg">Chưa có dữ liệu. Nhập cài đặt bên trên và bấm "Tải dữ liệu".</p>
+        </div>
+      </section>
+
+      <!-- HƯỚNG DẪN CÀI APPS SCRIPT -->
+      <section class="card">
+        <div class="guide-header">
+          <h3>📖 Hướng dẫn cài đặt Apps Script</h3>
+          <button id="btnToggleGuide" class="btn ghost small">▼ Xem</button>
+        </div>
+        <div id="guideContent" style="display:none">
+          <ol class="guide-steps">
+            <li>Mở Google Sheets của bạn → menu <strong>Extensions → Apps Script</strong></li>
+            <li>Xóa hết code cũ trong editor, dán đoạn code bên dưới vào</li>
+            <li>Đổi giá trị <code>SECRET_TOKEN</code> thành chuỗi bí mật bất kỳ (ví dụ: <code>'trollfc_abc123'</code>)</li>
+            <li>Bấm <strong>Deploy → New deployment</strong></li>
+            <li>Chọn type: <strong>Web app</strong> | Execute as: <strong>Me</strong> | Who has access: <strong>Anyone</strong></li>
+            <li>Bấm <strong>Deploy</strong>, copy URL web app → dán vào ô "Apps Script URL" bên trên</li>
+            <li>Điền token tương ứng vào ô "Secret token" → Lưu</li>
+          </ol>
+          <div class="code-block">
+            <button id="btnCopyScript" class="btn ghost small copy-btn">📋 Copy code</button>
+            <pre id="scriptCode">const SECRET_TOKEN   = 'THAY_DOI_TOKEN_NAY';
+const SPREADSHEET_ID = '1Gh8fwrRfxtYCsaFcF_pexf9q3z-Wzn2g1CKpT-OsNSM';
+const FORM_ID        = '1hUYeeIK7vSDOjthLEwyEOc9puE8T2Th3a1tbfYASyEU';
+
+function doGet(e) {
+  try {
+    var p = e.parameter;
+    if (p.token !== SECRET_TOKEN) return out({ ok: false, error: 'Unauthorized' });
+    var action = p.action || 'read';
+    var sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheets()[0];
+    var form  = FormApp.openById(FORM_ID);
+
+    if (action === 'read') {
+      var raw  = sheet.getDataRange().getValues();
+      var data = raw.map(function(row) {
+        return row.map(function(cell) {
+          if (cell instanceof Date)
+            return Utilities.formatDate(cell, 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy HH:mm:ss');
+          return cell;
+        });
+      });
+      return out({ ok: true, data: data });
+    }
+
+    if (action === 'clear') {
+      var last = sheet.getLastRow();
+      if (last > 1) sheet.deleteRows(2, last - 1);
+      return out({ ok: true });
+    }
+
+    if (action === 'delete_row') {
+      var r = parseInt(p.row);
+      if (r >= 2) sheet.deleteRow(r);
+      return out({ ok: true });
+    }
+
+    if (action === 'update_cell') {
+      var r = parseInt(p.row), c = parseInt(p.col), v = p.value;
+      sheet.getRange(r, c).setValue(v !== '' && !isNaN(+v) ? +v : v);
+      return out({ ok: true });
+    }
+
+    if (action === 'add_row') {
+      var vals = JSON.parse(p.values);
+      vals.unshift(new Date());
+      sheet.appendRow(vals);
+      return out({ ok: true });
+    }
+
+    if (action === 'get_form') {
+      var items = form.getItems();
+      var result = [];
+      for (var i = 0; i < items.length; i++) {
+        result.push({ index: i, id: items[i].getId(), title: items[i].getTitle() });
+      }
+      return out({ ok: true, items: result });
+    }
+
+    if (action === 'update_question') {
+      var items = form.getItems();
+      var idx = parseInt(p.index);
+      if (idx >= 0 && idx < items.length) items[idx].setTitle(p.title);
+      return out({ ok: true });
+    }
+
+    if (action === 'ping') {
+      return out({ ok: true, version: 'v3' });
+    }
+
+    if (action === 'add_question') {
+      var newItem = form.addScaleItem();
+      newItem.setTitle(p.title);
+      newItem.setBounds(1, 10);
+      return out({ ok: true });
+    }
+
+    if (action === 'delete_questions') {
+      var indices = JSON.parse(p.indices).sort(function(a, b) { return b - a; });
+      for (var i = 0; i < indices.length; i++) {
+        var items = form.getItems();
+        var idx = indices[i];
+        if (idx >= 1 && idx < items.length) form.deleteItem(items[idx]);
+      }
+      return out({ ok: true });
+    }
+
+    return out({ ok: false, error: 'Unknown action: ' + action });
+  } catch(err) {
+    return out({ ok: false, error: err.toString() });
+  }
+}
+
+function out(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}</pre>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- MODAL THÊM DÒNG -->
+  <div id="addModal" class="modal" style="display:none">
+    <div class="modal-box">
+      <h3>➕ Thêm dòng thủ công</h3>
+      <p class="modal-sub">Timestamp sẽ được tự động ghi là thời điểm hiện tại.</p>
+      <div id="addForm" class="add-form"></div>
+      <div class="modal-actions">
+        <button id="btnConfirmAdd" class="btn primary">✅ Thêm</button>
+        <button id="btnCancelAdd" class="btn ghost">Huỷ</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
